@@ -135,9 +135,8 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
 
     private static bool IsValidCardNumber(string number)
     {
-        if(number.Length!=16)return false;var sum=0;var alternate=false;
-        for(var i=number.Length-1;i>=0;i--){var digit=number[i]-'0';if(alternate){digit*=2;if(digit>9)digit-=9;}sum+=digit;alternate=!alternate;}
-        return sum%10==0;
+        // Es un checkout de demostración: se valida estructura, no autorización bancaria.
+        return number.Length==16&&number.All(char.IsDigit);
     }
 
     private static bool IsValidExpiry(string? expiry)

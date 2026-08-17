@@ -48,13 +48,14 @@ public sealed class AccountController(IBookMatchRepository repository) : Control
     }
 
     [Authorize, HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Logout() { await HttpContext.SignOutAsync(); return RedirectToAction(nameof(Login)); }
+    public async Task<IActionResult> Logout() { if(long.TryParse(User.FindFirstValue("SessionId"),out var sessionId))await repository.CloseSessionAsync(sessionId);await HttpContext.SignOutAsync(); return RedirectToAction(nameof(Login)); }
     [AllowAnonymous]
     public IActionResult AccessDenied() => View();
 
     private async Task SignInAsync(AuthenticatedUser user)
     {
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()), new Claim(ClaimTypes.Name,user.Name), new Claim(ClaimTypes.Email,user.Email), new Claim(ClaimTypes.Role,user.Role), new Claim("IsAuthor",user.IsAuthor.ToString()) };
+        var sessionId=await repository.StartSessionAsync(user.Id,HttpContext.Connection.RemoteIpAddress?.ToString());
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()), new Claim(ClaimTypes.Name,user.Name), new Claim(ClaimTypes.Email,user.Email), new Claim(ClaimTypes.Role,user.Role), new Claim("IsAuthor",user.IsAuthor.ToString()),new Claim("SessionId",sessionId.ToString()) };
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,new ClaimsPrincipal(new ClaimsIdentity(claims,CookieAuthenticationDefaults.AuthenticationScheme)));
     }
 }

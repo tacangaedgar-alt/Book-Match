@@ -125,10 +125,23 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
     public async Task<List<UserRow>> GetUsersAsync(string? query)
     {
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Usuario_Listar"); Add(cmd,"@Busqueda",query); await using var rd=await cmd.ExecuteReaderAsync(); var rows=new List<UserRow>();
-        while(await rd.ReadAsync()) rows.Add(new(){Id=rd.GetInt32("UsuarioId"),Name=rd.GetString("Nombre"),Email=rd.GetString("Correo"),Role=rd.GetString("Rol"),Published=rd.GetInt32("Publicados"),Registered=rd.GetDateTime("Registrado"),Active=rd.GetBoolean("Activo")}); return rows;
+        while(await rd.ReadAsync()){var role=rd.GetString("Rol");rows.Add(new(){Id=rd.GetInt32("UsuarioId"),Name=rd.GetString("Nombre"),Email=rd.GetString("Correo"),Role=role=="Usuario"?"Lector / Escritor":role,Published=rd.GetInt32("Publicados"),Registered=rd.GetDateTime("Registrado"),Active=rd.GetBoolean("Activo")});} return rows;
     }
 
     public async Task SetUserStatusAsync(int userId,bool active)=>await ExecuteAsync("dbo.usp_Usuario_Estado",("@UsuarioId",userId),("@Activo",active));
+
+    public async Task UpdateUserAsync(int adminId,EditUserInput input)=>await ExecuteAsync("dbo.usp_Usuario_Actualizar",("@AdministradorId",adminId),("@UsuarioId",input.Id),("@Nombre",input.Name),("@Correo",input.Email),("@Rol",input.Role),("@Activo",input.Active));
+
+    public async Task<long> StartSessionAsync(int userId,string? ipAddress)
+    { await using var cn=Connection();await cn.OpenAsync();await using var cmd=Procedure(cn,"dbo.usp_Sesion_Iniciar");Add(cmd,"@UsuarioId",userId);Add(cmd,"@DireccionIp",ipAddress);return Convert.ToInt64(await cmd.ExecuteScalarAsync()); }
+
+    public async Task CloseSessionAsync(long sessionId)=>await ExecuteAsync("dbo.usp_Sesion_Cerrar",("@SesionId",sessionId));
+
+    public async Task<List<SessionRow>> GetActiveSessionsAsync()
+    { await using var cn=Connection();await cn.OpenAsync();await using var cmd=Procedure(cn,"dbo.usp_Sesion_ListarActivas");await using var rd=await cmd.ExecuteReaderAsync();var rows=new List<SessionRow>();while(await rd.ReadAsync())rows.Add(new(rd.GetInt64("SesionId"),rd.GetInt32("UsuarioId"),rd.GetString("Usuario"),rd.GetString("Correo"),rd.GetString("Rol"),rd.GetDateTime("Inicio"),rd.IsDBNull("DireccionIp")?null:rd.GetString("DireccionIp")));return rows; }
+
+    public async Task<bool> IsSessionActiveAsync(long sessionId,int userId)
+    { await using var cn=Connection();await cn.OpenAsync();await using var cmd=Procedure(cn,"dbo.usp_Sesion_Validar");Add(cmd,"@SesionId",sessionId);Add(cmd,"@UsuarioId",userId);return Convert.ToBoolean(await cmd.ExecuteScalarAsync()); }
 
     private async Task ExecuteAsync(string procedure, params (string Name,object Value)[] values)
     { await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,procedure); foreach(var value in values) Add(cmd,value.Name,value.Value); await cmd.ExecuteNonQueryAsync(); }

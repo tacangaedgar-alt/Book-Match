@@ -169,4 +169,17 @@ public sealed class UsersViewModel
 {
     public string Tab { get; init; } = "users";
     public List<UserRow> Users { get; init; } = [];
+    public List<SessionRow> Sessions { get; init; } = [];
+    public string? Query { get; init; }
 }
+
+public sealed class EditUserInput
+{
+    [Range(1,int.MaxValue)] public int Id { get; set; }
+    [Required,StringLength(120)] public string Name { get; set; } = "";
+    [Required,EmailAddress,StringLength(180)] public string Email { get; set; } = "";
+    [Required] public string Role { get; set; } = "Lector";
+    public bool Active { get; set; }
+}
+
+public sealed record SessionRow(long Id,int UserId,string User,string Email,string Role,DateTime Started,string? IpAddress);

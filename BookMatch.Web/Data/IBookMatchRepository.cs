@@ -24,4 +24,9 @@ public interface IBookMatchRepository
     Task<List<PurchaseRow>> GetPurchasesAsync();
     Task<List<UserRow>> GetUsersAsync(string? query);
     Task SetUserStatusAsync(int userId, bool active);
+    Task UpdateUserAsync(int adminId, EditUserInput input);
+    Task<long> StartSessionAsync(int userId, string? ipAddress);
+    Task CloseSessionAsync(long sessionId);
+    Task<List<SessionRow>> GetActiveSessionsAsync();
+    Task<bool> IsSessionActiveAsync(long sessionId, int userId);
 }

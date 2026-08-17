@@ -1,5 +1,7 @@
 using BookMatch.Web.Data;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -18,6 +20,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "BookMatch.Auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            var sessionClaim=context.Principal?.FindFirstValue("SessionId");
+            var userClaim=context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if(!long.TryParse(sessionClaim,out var sessionId)||!int.TryParse(userClaim,out var userId)||!await context.HttpContext.RequestServices.GetRequiredService<IBookMatchRepository>().IsSessionActiveAsync(sessionId,userId))
+            { context.RejectPrincipal();await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); }
+        };
     });
 
 var app = builder.Build();

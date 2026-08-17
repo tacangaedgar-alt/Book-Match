@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   reports.querySelector('[data-export-excel]')?.addEventListener('click',()=>{const panel=activePanel(),table=panel?.querySelector('table');if(!table)return;const csv='\uFEFF'+[...table.rows].map(row=>[...row.cells].map(cell=>'"'+cell.textContent.trim().replaceAll('"','""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download=`BookMatch-${panel.dataset.reportName}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
   reports.querySelector('[data-export-pdf]')?.addEventListener('click',()=>{const panel=activePanel();if(!panel)return;const oldTitle=document.title;document.title=`BookMatch-${panel.dataset.reportName}`;const restore=()=>{document.title=oldTitle;window.removeEventListener('afterprint',restore)};window.addEventListener('afterprint',restore);window.print();setTimeout(restore,2000)});
  }
+ document.querySelectorAll('form').forEach(form=>{const toggle=form.querySelector('input[type="checkbox"][name="Active"]'),fallback=form.querySelector('input[type="hidden"][name="Active"]');if(toggle&&fallback)toggle.addEventListener('change',()=>fallback.value=String(toggle.checked));});
  setTimeout(()=>document.querySelectorAll('.toast-message').forEach(x=>x.remove()),4500);
 });
 function setSubmitting(form,label){const button=form.querySelector('[data-submit-button]');if(button){button.disabled=true;button.textContent=label;button.setAttribute('aria-busy','true')}}

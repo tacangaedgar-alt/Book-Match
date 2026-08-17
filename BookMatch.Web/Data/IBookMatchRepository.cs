@@ -7,6 +7,7 @@ public interface IBookMatchRepository
     Task<AuthenticatedUser?> AuthenticateAsync(string email, string password);
     Task<DashboardViewModel> GetDashboardAsync(bool admin, int userId);
     Task SavePreferencesAsync(int userId, RecommendationInput input);
+    Task<RecommendationInput?> GetPreferencesAsync(int userId);
     Task<List<BookItem>> GetRecommendationsAsync(int userId);
     Task<List<BookItem>> GetCatalogAsync(string? query, string? genre, string? language, string priceType, decimal? minimumRating);
     Task<List<BookItem>> GetLibraryAsync(int userId, string filter);

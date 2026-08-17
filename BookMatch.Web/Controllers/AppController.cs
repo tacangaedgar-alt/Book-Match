@@ -12,7 +12,13 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
     private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     public async Task<IActionResult> Dashboard() => View(await repository.GetDashboardAsync(false, UserId));
-    public IActionResult Recommendations() => View(new RecommendationViewModel());
+    public async Task<IActionResult> Recommendations(bool edit=false)
+    {
+        if(edit)return View(new RecommendationViewModel());
+        var preferences=await repository.GetPreferencesAsync(UserId);
+        if(preferences is null)return View(new RecommendationViewModel());
+        return View(new RecommendationViewModel{HasResults=true,Preferences=preferences,Books=await repository.GetRecommendationsAsync(UserId)});
+    }
 
     [HttpPost,ValidateAntiForgeryToken]
     public async Task<IActionResult> Recommendations(RecommendationInput input)

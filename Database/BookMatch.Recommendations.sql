@@ -13,6 +13,9 @@ GO
 CREATE OR ALTER PROCEDURE dbo.usp_Preferencia_Guardar @UsuarioId int,@Genero nvarchar(80),@Paginas nvarchar(40),@Idioma nvarchar(40),@Formato nvarchar(40),@Ritmo nvarchar(40),@Ambiente nvarchar(40),@Descubrimiento nvarchar(40) AS
 BEGIN SET NOCOUNT ON;UPDATE dbo.PreferenciasUsuario SET Genero=@Genero,Paginas=@Paginas,Idioma=@Idioma,Formato=@Formato,Ritmo=@Ritmo,Ambiente=@Ambiente,Descubrimiento=@Descubrimiento,Actualizado=sysdatetime() WHERE UsuarioId=@UsuarioId;IF @@ROWCOUNT=0 INSERT dbo.PreferenciasUsuario(UsuarioId,Genero,Paginas,Idioma,Formato,Ritmo,Ambiente,Descubrimiento)VALUES(@UsuarioId,@Genero,@Paginas,@Idioma,@Formato,@Ritmo,@Ambiente,@Descubrimiento);END
 GO
+CREATE OR ALTER PROCEDURE dbo.usp_Preferencia_Obtener @UsuarioId int AS
+BEGIN SET NOCOUNT ON;SELECT Genero,Paginas,Idioma,Formato,Ritmo,Ambiente,Descubrimiento FROM dbo.PreferenciasUsuario WHERE UsuarioId=@UsuarioId;END
+GO
 CREATE OR ALTER PROCEDURE dbo.usp_Recomendacion_Obtener @UsuarioId int AS
 BEGIN SET NOCOUNT ON;DECLARE @Genero nvarchar(80),@Paginas nvarchar(40),@Idioma nvarchar(40),@Formato nvarchar(40),@Ritmo nvarchar(40),@Ambiente nvarchar(40),@Descubrimiento nvarchar(40);SELECT @Genero=Genero,@Paginas=Paginas,@Idioma=Idioma,@Formato=Formato,@Ritmo=Ritmo,@Ambiente=Ambiente,@Descubrimiento=Descubrimiento FROM dbo.PreferenciasUsuario WHERE UsuarioId=@UsuarioId;
  SELECT l.LibroId,l.Codigo,l.Titulo,u.Nombre Autor,g.Nombre Genero,l.Idioma,l.Descripcion,l.Precio,l.Valoracion,l.PortadaUrl,l.Estado,l.Ventas,l.Descargas,CAST(0 AS bit) Leido,CAST(l.FechaPublicacion AS datetime2) Fecha,
@@ -20,6 +23,6 @@ BEGIN SET NOCOUNT ON;DECLARE @Genero nvarchar(80),@Paginas nvarchar(40),@Idioma 
  FROM dbo.Libros l JOIN dbo.Usuarios u ON u.UsuarioId=l.AutorId JOIN dbo.Generos g ON g.GeneroId=l.GeneroId WHERE l.Estado=N'Publicado' ORDER BY Afinidad DESC,l.Valoracion DESC,l.Ventas DESC;
 END
 GO
-IF OBJECT_ID('dbo.usp_Preferencia_Guardar','P') IS NULL OR OBJECT_ID('dbo.usp_Recomendacion_Obtener','P') IS NULL
+IF OBJECT_ID('dbo.usp_Preferencia_Guardar','P') IS NULL OR OBJECT_ID('dbo.usp_Preferencia_Obtener','P') IS NULL OR OBJECT_ID('dbo.usp_Recomendacion_Obtener','P') IS NULL
     THROW 50002, 'No se pudieron instalar los procedimientos de recomendaciones.', 1;
 PRINT 'Recomendaciones instaladas correctamente.';

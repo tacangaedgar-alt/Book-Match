@@ -2,7 +2,7 @@
 @{ViewData["Title"]="Recomendaciones";}
 @if(Model.HasResults)
 {
- <div class="page-heading"><div><h1>Lecturas recomendadas para ti</h1><p>Ordenadas según tus preferencias de género, idioma, formato y estilo.</p></div><a class="btn-outline" asp-action="Recommendations">Repetir cuestionario</a></div>
+ <div class="page-heading"><div><h1>Lecturas recomendadas para ti</h1><p>Estas coincidencias se cargaron usando las preferencias guardadas en tu perfil.</p></div><a class="btn-outline" asp-action="Recommendations" asp-route-edit="true">Cambiar mis preferencias</a></div>
  <div class="preference-summary"><span>Género: <strong>@Model.Preferences.Genre</strong></span><span>Idioma: <strong>@Model.Preferences.Language</strong></span><span>Formato: <strong>@Model.Preferences.Format</strong></span></div>
  <section class="book-grid">@foreach(var book in Model.Books){<article class="book-card"><div class="book-cover" style="background-image:url('@book.CoverUrl')"><span class="affinity-badge">@book.Affinity% afinidad</span></div><div class="book-info"><span class="tag">@book.Genre</span><h2>@book.Title</h2><p>@book.Author · @book.Language</p><div class="rating">★ @book.Rating</div><form asp-action="AddToCart" method="post"><input type="hidden" name="id" value="@book.Id"><button class="btn-primary wide">@(book.Price==0?"Añadir a biblioteca":"Añadir al carrito")</button></form></div></article>}</section>
  @if(Model.Books.Count==0){<div class="empty-state panel"><h2>Aún no hay coincidencias</h2><p>Publica más libros o repite el cuestionario con otras preferencias.</p></div>}

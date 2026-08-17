@@ -49,6 +49,13 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         Add(cmd,"@UsuarioId",userId); Add(cmd,"@Genero",input.Genre); Add(cmd,"@Paginas",input.PagePreference); Add(cmd,"@Idioma",input.Language); Add(cmd,"@Formato",input.Format); Add(cmd,"@Ritmo",input.Pace); Add(cmd,"@Ambiente",input.Mood); Add(cmd,"@Descubrimiento",input.Discovery); await cmd.ExecuteNonQueryAsync();
     }
 
+    public async Task<RecommendationInput?> GetPreferencesAsync(int userId)
+    {
+        await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Preferencia_Obtener"); Add(cmd,"@UsuarioId",userId);
+        await using var rd=await cmd.ExecuteReaderAsync();
+        return await rd.ReadAsync()?new RecommendationInput{Genre=rd.GetString("Genero"),PagePreference=rd.GetString("Paginas"),Language=rd.GetString("Idioma"),Format=rd.GetString("Formato"),Pace=rd.GetString("Ritmo"),Mood=rd.GetString("Ambiente"),Discovery=rd.GetString("Descubrimiento")}:null;
+    }
+
     public async Task<List<BookItem>> GetRecommendationsAsync(int userId)
     {
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Recomendacion_Obtener"); Add(cmd,"@UsuarioId",userId); return await ReadBooksAsync(cmd);

@@ -18,7 +18,7 @@ public interface IBookMatchRepository
     Task<int> GetCartCountAsync(int userId);
     Task<List<CartItem>> GetCartAsync(int userId);
     Task RemoveFromCartAsync(int userId, int bookId);
-    Task CheckoutAsync(int userId);
+    Task CheckoutAsync(int userId, string paymentMethod, string paymentReference);
     Task<List<PurchaseRow>> GetPurchasesAsync();
     Task<List<UserRow>> GetUsersAsync(string? query);
     Task SetUserStatusAsync(int userId, bool active);

@@ -103,9 +103,48 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
         await repository.PublishBookAsync(UserId,input,relativePath); TempData["Success"]="Tu libro fue enviado a publicación."; return RedirectToAction(nameof(Publications));
     }
 
-    public async Task<IActionResult> Cart() => View(await repository.GetCartAsync(UserId));
+    public async Task<IActionResult> Cart() => View(new CartViewModel{Items=await repository.GetCartAsync(UserId),Checkout=new CheckoutInput{PayPalEmail=User.FindFirstValue(ClaimTypes.Email)??""}});
     [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> RemoveFromCart(int id){await repository.RemoveFromCartAsync(UserId,id);return RedirectToAction(nameof(Cart));}
-    [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Checkout(){await repository.CheckoutAsync(UserId);TempData["Success"]="Compra completada. Los libros ya están en tu biblioteca.";return RedirectToAction(nameof(Library));}
+    [HttpPost,ValidateAntiForgeryToken]
+    public async Task<IActionResult> Checkout(CartViewModel model)
+    {
+        var items=await repository.GetCartAsync(UserId);
+        var input=model.Checkout??new CheckoutInput();
+        var userEmail=User.FindFirstValue(ClaimTypes.Email)??"";
+        if(items.Count==0)ModelState.AddModelError("","Tu carrito está vacío.");
+        if(input.PaymentMethod=="Card")
+        {
+            var digits=new string((input.CardNumber??"").Where(char.IsDigit).ToArray());
+            if(string.IsNullOrWhiteSpace(input.Cardholder))ModelState.AddModelError("Checkout.Cardholder","Ingresa el nombre del titular.");
+            if(!IsValidCardNumber(digits))ModelState.AddModelError("Checkout.CardNumber","Ingresa un número de tarjeta válido de 16 dígitos.");
+            if(!IsValidExpiry(input.Expiry))ModelState.AddModelError("Checkout.Expiry","Ingresa una fecha vigente en formato MM/AA.");
+            if((input.Cvv??"").Length is <3 or >4||!(input.Cvv??"").All(char.IsDigit))ModelState.AddModelError("Checkout.Cvv","El código de seguridad debe tener 3 o 4 dígitos.");
+        }
+        else if(input.PaymentMethod=="PayPal")
+        {
+            ModelState.Remove("Checkout.PayPalEmail");input.PayPalEmail=userEmail;
+            if(string.IsNullOrWhiteSpace(userEmail))ModelState.AddModelError("Checkout.PayPalEmail","Tu cuenta no tiene un correo válido para PayPal.");
+        }
+        else ModelState.AddModelError("Checkout.PaymentMethod","Selecciona un método de pago válido.");
+        if(!ModelState.IsValid)return View("Cart",new CartViewModel{Items=items,Checkout=input});
+        var reference=input.PaymentMethod=="PayPal"?$"PayPal {userEmail}":$"Tarjeta **** {new string((input.CardNumber??"").Where(char.IsDigit).ToArray())[^4..]}";
+        await repository.CheckoutAsync(UserId,input.PaymentMethod,reference);
+        TempData["Success"]=$"Compra simulada completada con {(input.PaymentMethod=="PayPal"?"PayPal":"tarjeta")}. Los libros ya están en tu biblioteca.";
+        return RedirectToAction(nameof(Library));
+    }
+
+    private static bool IsValidCardNumber(string number)
+    {
+        if(number.Length!=16)return false;var sum=0;var alternate=false;
+        for(var i=number.Length-1;i>=0;i--){var digit=number[i]-'0';if(alternate){digit*=2;if(digit>9)digit-=9;}sum+=digit;alternate=!alternate;}
+        return sum%10==0;
+    }
+
+    private static bool IsValidExpiry(string? expiry)
+    {
+        var parts=(expiry??"").Split('/');if(parts.Length!=2||!int.TryParse(parts[0],out var month)||!int.TryParse(parts[1],out var year)||month is <1 or >12)return false;
+        year+=2000;var now=DateTime.UtcNow;return year>now.Year||year==now.Year&&month>=now.Month;
+    }
     public async Task<IActionResult> Queries(string tab="author") => View(new QueryViewModel{Tab=tab,Books=await repository.GetCatalogAsync(null,null,null,"all",null),Purchases=await repository.GetPurchasesAsync()});
     public async Task<IActionResult> Reports() => View(new PublicationViewModel { Books=await repository.GetCatalogAsync(null,null,null,"all",null),Purchases=await repository.GetPurchasesAsync() });
 }

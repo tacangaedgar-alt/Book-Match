@@ -98,7 +98,7 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
     public async Task RemoveFromCartAsync(int userId,int bookId)=>await ExecuteAsync("dbo.usp_Carrito_Eliminar",("@UsuarioId",userId),("@LibroId",bookId));
-    public async Task CheckoutAsync(int userId)=>await ExecuteAsync("dbo.usp_Carrito_Comprar",("@UsuarioId",userId));
+    public async Task CheckoutAsync(int userId,string paymentMethod,string paymentReference)=>await ExecuteAsync("dbo.usp_Carrito_Comprar",("@UsuarioId",userId),("@MetodoPago",paymentMethod),("@ReferenciaPago",paymentReference));
 
     public async Task<List<CartItem>> GetCartAsync(int userId)
     {

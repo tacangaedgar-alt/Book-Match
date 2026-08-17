@@ -123,6 +123,23 @@ public sealed class CartItem
     public decimal Price { get; init; }
 }
 
+public sealed class CartViewModel
+{
+    public List<CartItem> Items { get; init; } = [];
+    public CheckoutInput Checkout { get; set; } = new();
+    public decimal Total => Items.Sum(x=>x.Price);
+}
+
+public sealed class CheckoutInput
+{
+    [Required] public string PaymentMethod { get; set; } = "Card";
+    public string Cardholder { get; set; } = "";
+    public string CardNumber { get; set; } = "";
+    public string Expiry { get; set; } = "";
+    public string Cvv { get; set; } = "";
+    public string PayPalEmail { get; set; } = "";
+}
+
 public sealed class QueryViewModel
 {
     public string Tab { get; init; } = "author";

@@ -5,7 +5,16 @@ document.addEventListener('DOMContentLoaded',()=>{
  document.querySelectorAll('[data-modal-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.closest('.modal-shell'))));
  document.querySelectorAll('.modal-shell').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m)}));
  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal(document.querySelector('.modal-shell:not([hidden])'))});
- document.querySelectorAll('[data-submit-feedback]').forEach(form=>form.addEventListener('submit',()=>setSubmitting(form,'Publicando…')));
+ document.querySelectorAll('[data-submit-feedback]').forEach(form=>form.addEventListener('submit',()=>setSubmitting(form,form.dataset.submitLabel||'Publicando…')));
+
+ const paymentForm=document.querySelector('[data-payment-form]');
+ if(paymentForm){
+  const methods=[...paymentForm.querySelectorAll('input[name="Checkout.PaymentMethod"]')],cardFields=paymentForm.querySelector('[data-card-fields]'),paypalFields=paymentForm.querySelector('[data-paypal-fields]');
+  const syncPayment=()=>{const method=methods.find(x=>x.checked)?.value||'Card';cardFields.hidden=method!=='Card';paypalFields.hidden=method!=='PayPal';paymentForm.querySelectorAll('.payment-option').forEach(x=>x.classList.toggle('selected',x.querySelector('input').checked));cardFields.querySelectorAll('input').forEach(x=>x.required=method==='Card')};
+  methods.forEach(x=>x.addEventListener('change',syncPayment));syncPayment();
+  paymentForm.querySelector('[data-card-number]')?.addEventListener('input',event=>{event.target.value=event.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim()});
+  paymentForm.querySelector('[data-card-expiry]')?.addEventListener('input',event=>{const value=event.target.value.replace(/\D/g,'').slice(0,4);event.target.value=value.length>2?`${value.slice(0,2)}/${value.slice(2)}`:value});
+ }
 
  const quiz=document.querySelector('[data-quiz]');
  if(quiz){

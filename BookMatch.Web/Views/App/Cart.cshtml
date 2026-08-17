@@ -1,2 +1,27 @@
-@model List<CartItem>
-@{ViewData["Title"]="Carrito";}<div class="page-heading"><div><h1>Carrito de Compras</h1><p>Revisa tus próximas lecturas</p></div></div>@if(Model.Count==0){<div class="empty-state panel"><span class="empty-icon">♧</span><h2>Tu carrito está vacío</h2><p>Explora el catálogo y agrega libros que te interesen.</p><a class="btn-primary" asp-action="Catalog">Explorar catálogo</a></div>}else{<div class="cart-layout"><div class="table-wrap"><table><thead><tr><th>Libro</th><th>Autor</th><th>Precio</th><th></th></tr></thead><tbody>@foreach(var item in Model){<tr><td><strong>@item.Title</strong></td><td>@item.Author</td><td>@item.Price.ToString("C")</td><td><form asp-action="RemoveFromCart" method="post"><input type="hidden" name="id" value="@item.BookId"><button class="btn-danger small">Quitar</button></form></td></tr>}</tbody></table></div><aside class="panel order-summary"><h2>Resumen</h2><div><span>Subtotal</span><strong>@Model.Sum(x=>x.Price).ToString("C")</strong></div><div><span>Total</span><strong>@Model.Sum(x=>x.Price).ToString("C")</strong></div><form asp-action="Checkout" method="post"><button class="btn-primary wide">Completar compra</button></form></aside></div>}
+@model CartViewModel
+@{ViewData["Title"]="Carrito";}
+<div class="page-heading"><div><h1>Carrito de Compras</h1><p>Revisa tus próximas lecturas y completa un pago simulado.</p></div></div>
+@if(Model.Items.Count==0)
+{
+ <div class="empty-state panel"><span class="empty-icon">♧</span><h2>Tu carrito está vacío</h2><p>Explora el catálogo y agrega libros que te interesen.</p><a class="btn-primary" asp-action="Catalog">Explorar catálogo</a></div>
+}
+else
+{
+ <div class="checkout-layout">
+  <section class="checkout-main">
+   <div class="panel cart-books"><div class="checkout-section-title"><span>1</span><div><h2>Tu pedido</h2><p>@Model.Items.Count @(Model.Items.Count==1?"libro seleccionado":"libros seleccionados")</p></div></div><div class="cart-lines">@foreach(var item in Model.Items){<article><div class="cart-book-mark" aria-hidden="true">B</div><div><strong>@item.Title</strong><small>@item.Author</small></div><b>@item.Price.ToString("C")</b><form asp-action="RemoveFromCart" method="post"><input type="hidden" name="id" value="@item.BookId"><button class="btn-danger small" aria-label="Quitar @item.Title del carrito">Quitar</button></form></article>}</div></div>
+   <form class="panel payment-panel" asp-action="Checkout" method="post" data-payment-form data-submit-feedback data-submit-label="Procesando…">
+    <div class="checkout-section-title"><span>2</span><div><h2>Método de pago</h2><p>Simulación académica: no se realizará ningún cargo real.</p></div></div>
+    <div asp-validation-summary="ModelOnly" class="validation checkout-validation"></div>
+    <fieldset class="payment-methods"><legend class="sr-only">Selecciona el método de pago</legend><label class="payment-option"><input asp-for="Checkout.PaymentMethod" type="radio" value="Card"><span class="payment-icon card-icon" aria-hidden="true"></span><span><strong>Tarjeta</strong><small>Crédito o débito</small></span><i>Seleccionar</i></label><label class="payment-option paypal-option"><input asp-for="Checkout.PaymentMethod" type="radio" value="PayPal"><span class="paypal-mark" aria-hidden="true">P</span><span><strong>PayPal</strong><small>Usar cuenta vinculada</small></span><i>Seleccionar</i></label></fieldset>
+    <section class="payment-fields" data-card-fields>
+     <div class="form-grid"><div class="full"><label asp-for="Checkout.Cardholder">Nombre del titular</label><input asp-for="Checkout.Cardholder" autocomplete="cc-name" placeholder="Como aparece en la tarjeta"><span asp-validation-for="Checkout.Cardholder"></span></div><div class="full"><label asp-for="Checkout.CardNumber">Número de tarjeta</label><div class="input-with-icon"><input asp-for="Checkout.CardNumber" inputmode="numeric" autocomplete="cc-number" maxlength="19" placeholder="4242 4242 4242 4242" data-card-number><span aria-hidden="true">••••</span></div><span asp-validation-for="Checkout.CardNumber"></span></div><div><label asp-for="Checkout.Expiry">Vencimiento</label><input asp-for="Checkout.Expiry" inputmode="numeric" autocomplete="cc-exp" maxlength="5" placeholder="MM/AA" data-card-expiry><span asp-validation-for="Checkout.Expiry"></span></div><div><label asp-for="Checkout.Cvv">CVV</label><input asp-for="Checkout.Cvv" type="password" inputmode="numeric" autocomplete="cc-csc" maxlength="4" placeholder="123"><span asp-validation-for="Checkout.Cvv"></span></div></div><p class="payment-hint">Para probar puedes usar 4242 4242 4242 4242, una fecha futura y CVV 123.</p>
+    </section>
+    <section class="paypal-fields" data-paypal-fields hidden><div class="paypal-connected"><span class="paypal-mark" aria-hidden="true">P</span><div><strong>Cuenta PayPal de demostración</strong><p>El correo se completa automáticamente con tu sesión.</p></div></div><label asp-for="Checkout.PayPalEmail">Correo de PayPal</label><input asp-for="Checkout.PayPalEmail" type="email" readonly aria-readonly="true"><span asp-validation-for="Checkout.PayPalEmail"></span></section>
+    <label class="secure-check"><input type="checkbox" required><span>Acepto procesar esta compra simulada y entiendo que no constituye un pago real.</span></label>
+    <button class="btn-primary wide checkout-pay" type="submit" data-submit-button>Confirmar compra simulada · @Model.Total.ToString("C")</button>
+   </form>
+  </section>
+  <aside class="panel checkout-summary"><h2>Resumen del pedido</h2><div><span>Subtotal</span><strong>@Model.Total.ToString("C")</strong></div><div><span>Comisión</span><strong>Gratis</strong></div><div class="checkout-total"><span>Total</span><strong>@Model.Total.ToString("C")</strong></div><p><span class="secure-lock" aria-hidden="true"></span> Pago de demostración protegido. No guardamos los datos de tu tarjeta.</p></aside>
+ </div>
+}

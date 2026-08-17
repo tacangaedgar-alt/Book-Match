@@ -1,10 +1,10 @@
 # BookMatch
 
-Aplicación de biblioteca digital construida con ASP.NET Core MVC (.NET 8), Razor Views, autenticación por cookies, SQL Server y procedimientos almacenados.
+Aplicación de biblioteca digital construida con ASP.NET Core MVC (.NET 10), Razor Views, autenticación por cookies, SQL Server y procedimientos almacenados.
 
 ## Instalación
 
-1. Abre `Database/BookMatch.Full.sql` en SQL Server Management Studio y ejecútalo completo.
+1. Abre el único instalador `Database/BookMatch.Full.sql` en SQL Server Management Studio y ejecútalo completo. El script elimina `BookMatchDb` si existe y la recrea con todas las tablas, datos demo y procedimientos almacenados.
 2. Ajusta `BookMatch.Web/appsettings.json` si tu instancia no usa `Server=localhost` y autenticación de Windows.
 3. Desde esta carpeta ejecuta:
 

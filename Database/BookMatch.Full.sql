@@ -1,6 +1,17 @@
-/* BookMatch - instalación completa y repetible para SQL Server 2019+ */
-SET NOCOUNT ON;
-IF DB_ID(N'BookMatchDb') IS NULL CREATE DATABASE BookMatchDb;
+/*
+ BookMatch - reinicio e instalación completa para SQL Server 2019+
+ ADVERTENCIA: elimina BookMatchDb y todos sus datos antes de recrearla.
+ Los PDF físicos ubicados en wwwroot/uploads/books no son eliminados.
+*/
+USE master;
+GO
+IF DB_ID(N'BookMatchDb') IS NOT NULL
+BEGIN
+    ALTER DATABASE BookMatchDb SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE BookMatchDb;
+END
+GO
+CREATE DATABASE BookMatchDb;
 GO
 USE BookMatchDb;
 GO

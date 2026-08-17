@@ -182,4 +182,13 @@ public sealed class EditUserInput
     public bool Active { get; set; }
 }
 
+public sealed class CreateUserInput
+{
+    [Required,StringLength(120)] public string Name { get; set; } = "";
+    [Required,EmailAddress,StringLength(180)] public string Email { get; set; } = "";
+    [Required,StringLength(100,MinimumLength=6)] public string Password { get; set; } = "";
+    [Required] public string Role { get; set; } = "Lector / Escritor";
+    public bool Active { get; set; } = true;
+}
+
 public sealed record SessionRow(long Id,int UserId,string User,string Email,string Role,DateTime Started,string? IpAddress);

@@ -131,6 +131,7 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
     public async Task SetUserStatusAsync(int userId,bool active)=>await ExecuteAsync("dbo.usp_Usuario_Estado",("@UsuarioId",userId),("@Activo",active));
 
     public async Task UpdateUserAsync(int adminId,EditUserInput input)=>await ExecuteAsync("dbo.usp_Usuario_Actualizar",("@AdministradorId",adminId),("@UsuarioId",input.Id),("@Nombre",input.Name),("@Correo",input.Email),("@Rol",input.Role),("@Activo",input.Active));
+    public async Task CreateUserAsync(CreateUserInput input)=>await ExecuteAsync("dbo.usp_Usuario_Crear",("@Nombre",input.Name),("@Correo",input.Email),("@Password",input.Password),("@Rol",input.Role),("@Activo",input.Active));
 
     public async Task<long> StartSessionAsync(int userId,string? ipAddress)
     { await using var cn=Connection();await cn.OpenAsync();await using var cmd=Procedure(cn,"dbo.usp_Sesion_Iniciar");Add(cmd,"@UsuarioId",userId);Add(cmd,"@DireccionIp",ipAddress);return Convert.ToInt64(await cmd.ExecuteScalarAsync()); }

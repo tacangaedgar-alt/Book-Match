@@ -31,6 +31,14 @@ public sealed class AdminController(IBookMatchRepository repository) : Controlle
         return RedirectToAction(nameof(Users));
     }
     [HttpPost,ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateUser(CreateUserInput input)
+    {
+        if(!ModelState.IsValid){TempData["Error"]="Completa correctamente el nombre, correo, contraseña y rol.";return RedirectToAction(nameof(Users));}
+        try{await repository.CreateUserAsync(input);TempData["Success"]="Usuario creado correctamente. Ya puede iniciar sesión.";}
+        catch(Exception ex){TempData["Error"]=ex.Message.Contains("correo",StringComparison.OrdinalIgnoreCase)?"Ese correo ya pertenece a otro usuario.":"No se pudo crear el usuario.";}
+        return RedirectToAction(nameof(Users));
+    }
+    [HttpPost,ValidateAntiForgeryToken]
     public async Task<IActionResult> CloseSession(long id){await repository.CloseSessionAsync(id);TempData["Success"]="Sesión cerrada. El usuario será enviado al login en su próxima petición.";return RedirectToAction(nameof(Users),new{tab="sessions"});}
     public async Task<IActionResult> Queries(string tab="purchases")=>View(new QueryViewModel{Tab=tab,Books=await repository.GetCatalogAsync(null,null,null,"all",null),Purchases=await repository.GetPurchasesAsync()});
     public async Task<IActionResult> Reports()=>View(new PublicationViewModel{Books=await repository.GetCatalogAsync(null,null,null,"all",null),Purchases=await repository.GetPurchasesAsync()});

@@ -38,6 +38,8 @@ public sealed class BookItem
     public string Description { get; init; } = "";
     public decimal Price { get; init; }
     public decimal Rating { get; init; }
+    public int RatingCount { get; init; }
+    public int UserRating { get; init; }
     public string CoverUrl { get; init; } = "";
     public string Status { get; init; } = "Publicado";
     public int Sales { get; init; }
@@ -46,6 +48,7 @@ public sealed class BookItem
     public bool HasPdf { get; init; }
     public bool IsInLibrary { get; init; }
     public bool IsInCart { get; init; }
+    public bool IsOwnPublication { get; init; }
     public DateTime? Date { get; init; }
     public int Affinity { get; init; }
 }

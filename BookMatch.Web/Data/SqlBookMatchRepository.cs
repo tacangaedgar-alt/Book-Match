@@ -66,6 +66,9 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Biblioteca_Listar"); Add(cmd,"@UsuarioId",userId); Add(cmd,"@Filtro",filter); return await ReadBooksAsync(cmd);
     }
 
+    public async Task RateBookAsync(int userId, int bookId, int score)
+        => await ExecuteAsync("dbo.usp_Valoracion_Guardar",("@UsuarioId",userId),("@LibroId",bookId),("@Puntuacion",score));
+
     public async Task<LibraryBookAccess?> GetLibraryBookAccessAsync(int userId, int bookId, bool markAsRead)
     {
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Biblioteca_Acceso");
@@ -129,7 +132,7 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         while(await rd.ReadAsync()) rows.Add(new(){
             Id=rd.GetInt32("LibroId"), Code=rd.GetString("Codigo"), Title=rd.GetString("Titulo"), Author=rd.GetString("Autor"), Genre=rd.GetString("Genero"), Language=rd.GetString("Idioma"),
             Description=rd.GetString("Descripcion"), Price=rd.GetDecimal("Precio"), Rating=rd.GetDecimal("Valoracion"), CoverUrl=rd.GetString("PortadaUrl"), Status=rd.GetString("Estado"),
-            Sales=rd.GetInt32("Ventas"), Downloads=rd.GetInt32("Descargas"), IsRead=rd.GetBoolean("Leido"), HasPdf=HasColumn(rd,"TienePdf")&&rd.GetBoolean("TienePdf"), IsInLibrary=HasColumn(rd,"EnBiblioteca")&&rd.GetBoolean("EnBiblioteca"), IsInCart=HasColumn(rd,"EnCarrito")&&rd.GetBoolean("EnCarrito"), Date=rd.IsDBNull("Fecha")?null:rd.GetDateTime("Fecha"), Affinity=HasColumn(rd,"Afinidad")?rd.GetInt32("Afinidad"):0}); return rows;
+            Sales=rd.GetInt32("Ventas"), Downloads=rd.GetInt32("Descargas"), IsRead=rd.GetBoolean("Leido"), HasPdf=HasColumn(rd,"TienePdf")&&rd.GetBoolean("TienePdf"), IsInLibrary=HasColumn(rd,"EnBiblioteca")&&rd.GetBoolean("EnBiblioteca"), IsInCart=HasColumn(rd,"EnCarrito")&&rd.GetBoolean("EnCarrito"), IsOwnPublication=HasColumn(rd,"EsPropio")&&rd.GetBoolean("EsPropio"), RatingCount=HasColumn(rd,"CantidadValoraciones")?rd.GetInt32("CantidadValoraciones"):0, UserRating=HasColumn(rd,"ValoracionUsuario")?rd.GetInt32("ValoracionUsuario"):0, Date=rd.IsDBNull("Fecha")?null:rd.GetDateTime("Fecha"), Affinity=HasColumn(rd,"Afinidad")?rd.GetInt32("Afinidad"):0}); return rows;
     }
 
     private static bool HasColumn(SqlDataReader reader,string name){for(var i=0;i<reader.FieldCount;i++)if(string.Equals(reader.GetName(i),name,StringComparison.OrdinalIgnoreCase))return true;return false;}

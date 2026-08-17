@@ -41,12 +41,22 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
         if(result=="library")TempData["Success"]="Libro gratuito añadido a tu biblioteca.";
         else if(result=="cart")TempData["Success"]="Libro añadido al carrito.";
         else if(result=="owned")TempData["Error"]="Este libro ya está en tu biblioteca.";
+        else if(result=="own_book")TempData["Error"]="No puedes adquirir tu propia publicación.";
         else if(result=="already_cart")TempData["Error"]="Este libro ya está en tu carrito.";
         else TempData["Error"]="El libro no está disponible.";
         return RedirectToAction(nameof(Catalog));
     }
 
     public async Task<IActionResult> Library(string filter="all") => View(new LibraryViewModel { Books=await repository.GetLibraryAsync(UserId,filter),Filter=filter });
+
+    [HttpPost,ValidateAntiForgeryToken]
+    public async Task<IActionResult> RateBook(int id,int score,string filter="all")
+    {
+        if(score is <1 or >5){TempData["Error"]="La valoración debe estar entre 1 y 5 estrellas.";return RedirectToAction(nameof(Library),new{filter});}
+        try{await repository.RateBookAsync(UserId,id,score);TempData["Success"]="Tu valoración se guardó y ya forma parte del promedio público.";}
+        catch(SqlException ex){TempData["Error"]=ex.Message.Contains("biblioteca",StringComparison.OrdinalIgnoreCase)?"Solo puedes valorar libros de tu biblioteca.":"No se pudo guardar la valoración.";}
+        return RedirectToAction(nameof(Library),new{filter});
+    }
 
     public async Task<IActionResult> ReadBook(int id)
     {

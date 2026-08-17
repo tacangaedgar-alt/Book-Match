@@ -3,6 +3,10 @@ GO
 SET NOCOUNT ON;
 IF COL_LENGTH('dbo.Libros','NumeroPaginas') IS NULL ALTER TABLE dbo.Libros ADD NumeroPaginas int NULL;
 IF COL_LENGTH('dbo.Libros','Formato') IS NULL ALTER TABLE dbo.Libros ADD Formato nvarchar(30) NOT NULL CONSTRAINT DF_Libros_Formato DEFAULT N'PDF';
+GO
+
+-- Las columnas deben existir antes de que SQL Server compile las instrucciones
+-- que las utilizan en los lotes siguientes.
 IF OBJECT_ID('dbo.PreferenciasUsuario') IS NULL CREATE TABLE dbo.PreferenciasUsuario(UsuarioId int NOT NULL PRIMARY KEY REFERENCES dbo.Usuarios(UsuarioId),Genero nvarchar(80) NOT NULL,Paginas nvarchar(40) NOT NULL,Idioma nvarchar(40) NOT NULL,Formato nvarchar(40) NOT NULL,Ritmo nvarchar(40) NOT NULL,Ambiente nvarchar(40) NOT NULL,Descubrimiento nvarchar(40) NOT NULL,Actualizado datetime2 NOT NULL DEFAULT sysdatetime());
 UPDATE dbo.Libros SET NumeroPaginas=CASE (LibroId%5) WHEN 0 THEN 120 WHEN 1 THEN 220 WHEN 2 THEN 340 WHEN 3 THEN 510 ELSE 280 END,Formato=CASE (LibroId%3) WHEN 0 THEN N'Online' WHEN 1 THEN N'PDF' ELSE N'EPUB' END WHERE NumeroPaginas IS NULL;
 GO
@@ -16,4 +20,6 @@ BEGIN SET NOCOUNT ON;DECLARE @Genero nvarchar(80),@Paginas nvarchar(40),@Idioma 
  FROM dbo.Libros l JOIN dbo.Usuarios u ON u.UsuarioId=l.AutorId JOIN dbo.Generos g ON g.GeneroId=l.GeneroId WHERE l.Estado=N'Publicado' ORDER BY Afinidad DESC,l.Valoracion DESC,l.Ventas DESC;
 END
 GO
+IF OBJECT_ID('dbo.usp_Preferencia_Guardar','P') IS NULL OR OBJECT_ID('dbo.usp_Recomendacion_Obtener','P') IS NULL
+    THROW 50002, 'No se pudieron instalar los procedimientos de recomendaciones.', 1;
 PRINT 'Recomendaciones instaladas correctamente.';

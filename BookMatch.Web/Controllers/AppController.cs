@@ -31,10 +31,19 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
     }
 
     public async Task<IActionResult> Catalog(string? q, string? genre, string? language, string priceType="all", decimal? rating=null)
-        => View(new CatalogViewModel { Books=await repository.GetCatalogAsync(q,genre,language,priceType,rating), Query=q,Genre=genre,Language=language,PriceType=priceType,MinimumRating=rating });
+        => View(new CatalogViewModel { Books=await repository.GetCatalogAsync(q,genre,language,priceType,rating,UserId), Query=q,Genre=genre,Language=language,PriceType=priceType,MinimumRating=rating });
 
     [HttpPost,ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddToCart(int id) { await repository.AddToCartAsync(UserId,id); TempData["Success"]="Libro añadido al carrito."; return RedirectToAction(nameof(Catalog)); }
+    public async Task<IActionResult> AddToCart(int id)
+    {
+        var result=await repository.AddToCartAsync(UserId,id);
+        if(result=="library")TempData["Success"]="Libro gratuito añadido a tu biblioteca.";
+        else if(result=="cart")TempData["Success"]="Libro añadido al carrito.";
+        else if(result=="owned")TempData["Error"]="Este libro ya está en tu biblioteca.";
+        else if(result=="already_cart")TempData["Error"]="Este libro ya está en tu carrito.";
+        else TempData["Error"]="El libro no está disponible.";
+        return RedirectToAction(nameof(Catalog));
+    }
 
     public async Task<IActionResult> Library(string filter="all") => View(new LibraryViewModel { Books=await repository.GetLibraryAsync(UserId,filter),Filter=filter });
 

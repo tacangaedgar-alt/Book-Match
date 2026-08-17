@@ -44,6 +44,8 @@ public sealed class BookItem
     public int Downloads { get; init; }
     public bool IsRead { get; init; }
     public bool HasPdf { get; init; }
+    public bool IsInLibrary { get; init; }
+    public bool IsInCart { get; init; }
     public DateTime? Date { get; init; }
     public int Affinity { get; init; }
 }

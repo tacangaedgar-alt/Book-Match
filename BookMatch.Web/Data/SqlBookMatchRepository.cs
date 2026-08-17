@@ -36,10 +36,10 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         return new() { Title = admin ? "Panel de Administración" : "Mi Dashboard", Metrics = metrics, Monthly = monthly, Genres = genres };
     }
 
-    public async Task<List<BookItem>> GetCatalogAsync(string? query, string? genre, string? language, string priceType, decimal? minimumRating)
+    public async Task<List<BookItem>> GetCatalogAsync(string? query, string? genre, string? language, string priceType, decimal? minimumRating, int? userId = null)
     {
         await using var cn = Connection(); await cn.OpenAsync(); await using var cmd = Procedure(cn, "dbo.usp_Libro_Catalogo");
-        Add(cmd,"@Busqueda",query); Add(cmd,"@Genero",genre); Add(cmd,"@Idioma",language); Add(cmd,"@TipoPrecio",priceType); Add(cmd,"@ValoracionMinima",minimumRating);
+        Add(cmd,"@Busqueda",query); Add(cmd,"@Genero",genre); Add(cmd,"@Idioma",language); Add(cmd,"@TipoPrecio",priceType); Add(cmd,"@ValoracionMinima",minimumRating); Add(cmd,"@UsuarioId",userId);
         return await ReadBooksAsync(cmd);
     }
 
@@ -86,7 +86,17 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 
-    public async Task AddToCartAsync(int userId,int bookId)=>await ExecuteAsync("dbo.usp_Carrito_Agregar",("@UsuarioId",userId),("@LibroId",bookId));
+    public async Task<string> AddToCartAsync(int userId,int bookId)
+    {
+        await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Carrito_Agregar"); Add(cmd,"@UsuarioId",userId); Add(cmd,"@LibroId",bookId);
+        return Convert.ToString(await cmd.ExecuteScalarAsync())??"not_found";
+    }
+
+    public async Task<int> GetCartCountAsync(int userId)
+    {
+        await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Carrito_Contar"); Add(cmd,"@UsuarioId",userId);
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+    }
     public async Task RemoveFromCartAsync(int userId,int bookId)=>await ExecuteAsync("dbo.usp_Carrito_Eliminar",("@UsuarioId",userId),("@LibroId",bookId));
     public async Task CheckoutAsync(int userId)=>await ExecuteAsync("dbo.usp_Carrito_Comprar",("@UsuarioId",userId));
 
@@ -119,7 +129,7 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         while(await rd.ReadAsync()) rows.Add(new(){
             Id=rd.GetInt32("LibroId"), Code=rd.GetString("Codigo"), Title=rd.GetString("Titulo"), Author=rd.GetString("Autor"), Genre=rd.GetString("Genero"), Language=rd.GetString("Idioma"),
             Description=rd.GetString("Descripcion"), Price=rd.GetDecimal("Precio"), Rating=rd.GetDecimal("Valoracion"), CoverUrl=rd.GetString("PortadaUrl"), Status=rd.GetString("Estado"),
-            Sales=rd.GetInt32("Ventas"), Downloads=rd.GetInt32("Descargas"), IsRead=rd.GetBoolean("Leido"), HasPdf=HasColumn(rd,"TienePdf")&&rd.GetBoolean("TienePdf"), Date=rd.IsDBNull("Fecha")?null:rd.GetDateTime("Fecha"), Affinity=HasColumn(rd,"Afinidad")?rd.GetInt32("Afinidad"):0}); return rows;
+            Sales=rd.GetInt32("Ventas"), Downloads=rd.GetInt32("Descargas"), IsRead=rd.GetBoolean("Leido"), HasPdf=HasColumn(rd,"TienePdf")&&rd.GetBoolean("TienePdf"), IsInLibrary=HasColumn(rd,"EnBiblioteca")&&rd.GetBoolean("EnBiblioteca"), IsInCart=HasColumn(rd,"EnCarrito")&&rd.GetBoolean("EnCarrito"), Date=rd.IsDBNull("Fecha")?null:rd.GetDateTime("Fecha"), Affinity=HasColumn(rd,"Afinidad")?rd.GetInt32("Afinidad"):0}); return rows;
     }
 
     private static bool HasColumn(SqlDataReader reader,string name){for(var i=0;i<reader.FieldCount;i++)if(string.Equals(reader.GetName(i),name,StringComparison.OrdinalIgnoreCase))return true;return false;}

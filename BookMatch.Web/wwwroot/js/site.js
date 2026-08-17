@@ -7,10 +7,22 @@ document.addEventListener('DOMContentLoaded',()=>{
  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal(document.querySelector('.modal-shell:not([hidden])'))});
  document.querySelectorAll('[data-submit-feedback]').forEach(form=>form.addEventListener('submit',()=>setSubmitting(form,form.dataset.submitLabel||'Publicando…')));
 
+ document.querySelectorAll('[data-drop-zone]').forEach(zone=>{
+  const input=zone.querySelector('input[type="file"]');if(!input)return;
+  ['dragenter','dragover'].forEach(name=>zone.addEventListener(name,event=>{event.preventDefault();zone.classList.add('dragging')}));
+  ['dragleave','drop'].forEach(name=>zone.addEventListener(name,event=>{event.preventDefault();zone.classList.remove('dragging')}));
+  zone.addEventListener('drop',event=>{if(event.dataTransfer.files.length){input.files=event.dataTransfer.files;input.dispatchEvent(new Event('change',{bubbles:true}))}});
+ });
+ const coverInput=document.querySelector('[data-cover-input]');
+ coverInput?.addEventListener('change',()=>{const file=coverInput.files?.[0],zone=coverInput.closest('[data-drop-zone]'),preview=zone?.querySelector('[data-cover-preview]');if(!file)return;const valid=['image/jpeg','image/png','image/webp'].includes(file.type)&&file.size<=5*1024*1024;coverInput.setCustomValidity(valid?'':'Selecciona una imagen JPG, PNG o WEBP de hasta 5 MB.');if(!valid){coverInput.reportValidity();coverInput.value='';zone.classList.remove('has-file');return}zone.style.setProperty('--cover-preview',`url("${URL.createObjectURL(file)}")`);zone.classList.add('has-file');preview.querySelector('small').textContent=file.name});
+ const pdfInput=document.querySelector('[data-pdf-input]');
+ pdfInput?.addEventListener('change',()=>{const file=pdfInput.files?.[0],zone=pdfInput.closest('[data-drop-zone]'),label=zone?.querySelector('[data-file-label]');if(!file)return;const valid=file.type==='application/pdf'&&file.size<=50*1024*1024;pdfInput.setCustomValidity(valid?'':'Selecciona un PDF de hasta 50 MB.');if(!valid){pdfInput.reportValidity();pdfInput.value='';zone.classList.remove('has-file');return}zone.classList.add('has-file');label.textContent=`${file.name} · ${(file.size/1024/1024).toFixed(1)} MB`});
+
  const paymentForm=document.querySelector('[data-payment-form]');
  if(paymentForm){
   const methods=[...paymentForm.querySelectorAll('input[name="Checkout.PaymentMethod"]')],cardFields=paymentForm.querySelector('[data-card-fields]'),paypalFields=paymentForm.querySelector('[data-paypal-fields]');
-  const syncPayment=()=>{const method=methods.find(x=>x.checked)?.value||'Card';cardFields.hidden=method!=='Card';paypalFields.hidden=method!=='PayPal';paymentForm.querySelectorAll('.payment-option').forEach(x=>x.classList.toggle('selected',x.querySelector('input').checked));cardFields.querySelectorAll('input').forEach(x=>x.required=method==='Card')};
+  const syncPayment=()=>{const method=methods.find(x=>x.checked)?.value||'Card';cardFields.hidden=method!=='Card';paypalFields.hidden=method!=='PayPal';paymentForm.querySelectorAll('.payment-option').forEach(x=>{const selected=x.querySelector('input').checked;x.classList.toggle('selected',selected);x.querySelector('i').textContent=selected?'Seleccionado':'Seleccionar'});cardFields.querySelectorAll('input').forEach(x=>x.required=method==='Card');const submitText=paymentForm.querySelector('[data-payment-submit-text]');if(submitText)submitText.textContent=method==='PayPal'?'Confirmar con PayPal':'Confirmar con tarjeta'};
+  paymentForm.querySelectorAll('.payment-option').forEach(option=>option.addEventListener('click',()=>{const radio=option.querySelector('input');if(!radio.checked){radio.checked=true;radio.dispatchEvent(new Event('change',{bubbles:true}))}}));
   methods.forEach(x=>x.addEventListener('change',syncPayment));syncPayment();
   paymentForm.querySelector('[data-card-number]')?.addEventListener('input',event=>{event.target.value=event.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim()});
   paymentForm.querySelector('[data-card-expiry]')?.addEventListener('input',event=>{const value=event.target.value.replace(/\D/g,'').slice(0,4);event.target.value=value.length>2?`${value.slice(0,2)}/${value.slice(2)}`:value});

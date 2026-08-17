@@ -112,7 +112,8 @@ public sealed class PublishBookInput
     [Range(0, 9999)] public decimal Price { get; set; }
     [StringLength(2000)] public string Description { get; set; } = "";
     public string? Content { get; set; }
-    public IFormFile? Pdf { get; set; }
+    [Required(ErrorMessage="Selecciona el archivo PDF del libro.")] public IFormFile? Pdf { get; set; }
+    [Required(ErrorMessage="Selecciona una imagen de portada.")] public IFormFile? Cover { get; set; }
 }
 
 public sealed class CartItem

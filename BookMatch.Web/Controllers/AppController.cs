@@ -3,6 +3,7 @@ using BookMatch.Web.Data;
 using BookMatch.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 
 namespace BookMatch.Web.Controllers;
 
@@ -83,24 +84,32 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
     }
     public async Task<IActionResult> Publications(bool stats=false) => View(new PublicationViewModel { Books=await repository.GetPublicationsAsync(UserId),Statistics=stats });
 
-    [HttpPost,ValidateAntiForgeryToken,RequestSizeLimit(55_000_000)]
+    [HttpPost,ValidateAntiForgeryToken,RequestSizeLimit(60_000_000)]
     public async Task<IActionResult> Publish(PublishBookInput input)
     {
-        if (!ModelState.IsValid) { TempData["Error"]="Revisa los campos obligatorios."; return RedirectToAction(nameof(Publications)); }
-        string? relativePath=null;
-        if(input.Pdf is { Length: > 0 })
+        if (!ModelState.IsValid||input.Pdf is null||input.Cover is null) { TempData["Error"]="El PDF, la portada y los datos obligatorios son necesarios."; return RedirectToAction(nameof(Publications)); }
+        var maxPdfMb=configuration.GetValue<int>("Uploads:MaxPdfSizeMb",50);
+        if(input.Pdf.Length==0||input.Pdf.Length>maxPdfMb*1024L*1024L||!string.Equals(Path.GetExtension(input.Pdf.FileName),".pdf",StringComparison.OrdinalIgnoreCase)){TempData["Error"]=$"El PDF debe ser válido y pesar hasta {maxPdfMb} MB.";return RedirectToAction(nameof(Publications));}
+        await using(var validationStream=input.Pdf.OpenReadStream())
         {
-            var maxMb=configuration.GetValue<int>("Uploads:MaxPdfSizeMb",50);
-            if(input.Pdf.Length>maxMb*1024L*1024L || !string.Equals(Path.GetExtension(input.Pdf.FileName),".pdf",StringComparison.OrdinalIgnoreCase)) { TempData["Error"]=$"Solo se aceptan PDF de hasta {maxMb} MB."; return RedirectToAction(nameof(Publications)); }
-            await using (var validationStream=input.Pdf.OpenReadStream())
-            {
-                var signature=new byte[5];
-                if(await validationStream.ReadAsync(signature)!=5 || !signature.SequenceEqual("%PDF-"u8.ToArray())) { TempData["Error"]="El archivo seleccionado no es un PDF válido."; return RedirectToAction(nameof(Publications)); }
-            }
-            var folder=Path.Combine(environment.WebRootPath,"uploads","books"); Directory.CreateDirectory(folder);
-            var fileName=$"{Guid.NewGuid():N}.pdf"; await using var stream=System.IO.File.Create(Path.Combine(folder,fileName)); await input.Pdf.CopyToAsync(stream); relativePath=$"/uploads/books/{fileName}";
+            var signature=new byte[5];if(await validationStream.ReadAsync(signature)!=5||!signature.SequenceEqual("%PDF-"u8.ToArray())){TempData["Error"]="El archivo seleccionado no es un PDF válido.";return RedirectToAction(nameof(Publications));}
         }
-        await repository.PublishBookAsync(UserId,input,relativePath); TempData["Success"]="Tu libro fue enviado a publicación."; return RedirectToAction(nameof(Publications));
+        var maxCoverMb=configuration.GetValue<int>("Uploads:MaxCoverSizeMb",5);
+        var coverExtension=Path.GetExtension(input.Cover.FileName).ToLowerInvariant();
+        if(input.Cover.Length==0||input.Cover.Length>maxCoverMb*1024L*1024L||!new[]{".jpg",".jpeg",".png",".webp"}.Contains(coverExtension)||!await IsValidCoverAsync(input.Cover,coverExtension)){TempData["Error"]=$"La portada debe ser JPG, PNG o WEBP y pesar hasta {maxCoverMb} MB.";return RedirectToAction(nameof(Publications));}
+        var pdfFolder=Path.Combine(environment.WebRootPath,"uploads","books");var coverFolder=Path.Combine(environment.WebRootPath,"uploads","covers");Directory.CreateDirectory(pdfFolder);Directory.CreateDirectory(coverFolder);
+        var pdfName=$"{Guid.NewGuid():N}.pdf";var coverName=$"{Guid.NewGuid():N}{coverExtension}";var pdfPhysical=Path.Combine(pdfFolder,pdfName);var coverPhysical=Path.Combine(coverFolder,coverName);
+        await using(var pdfStream=System.IO.File.Create(pdfPhysical))await input.Pdf.CopyToAsync(pdfStream);
+        await using(var coverStream=System.IO.File.Create(coverPhysical))await input.Cover.CopyToAsync(coverStream);
+        try{await repository.PublishBookAsync(UserId,input,$"/uploads/books/{pdfName}",$"/uploads/covers/{coverName}");}
+        catch{System.IO.File.Delete(pdfPhysical);System.IO.File.Delete(coverPhysical);throw;}
+        TempData["Success"]="Tu libro y su portada se publicaron correctamente.";return RedirectToAction(nameof(Publications));
+    }
+
+    private static async Task<bool> IsValidCoverAsync(IFormFile file,string extension)
+    {
+        await using var stream=file.OpenReadStream();var header=new byte[12];var read=await stream.ReadAsync(header);
+        return extension switch{".jpg" or ".jpeg"=>read>=3&&header[0]==0xFF&&header[1]==0xD8&&header[2]==0xFF,".png"=>read>=8&&header[..8].SequenceEqual(new byte[]{0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A}),".webp"=>read>=12&&header[..4].SequenceEqual("RIFF"u8.ToArray())&&header[8..12].SequenceEqual("WEBP"u8.ToArray()),_=>false};
     }
 
     public async Task<IActionResult> Cart() => View(new CartViewModel{Items=await repository.GetCartAsync(UserId),Checkout=new CheckoutInput{PayPalEmail=User.FindFirstValue(ClaimTypes.Email)??""}});
@@ -128,7 +137,12 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
         else ModelState.AddModelError("Checkout.PaymentMethod","Selecciona un método de pago válido.");
         if(!ModelState.IsValid)return View("Cart",new CartViewModel{Items=items,Checkout=input});
         var reference=input.PaymentMethod=="PayPal"?$"PayPal {userEmail}":$"Tarjeta **** {new string((input.CardNumber??"").Where(char.IsDigit).ToArray())[^4..]}";
-        await repository.CheckoutAsync(UserId,input.PaymentMethod,reference);
+        try{await repository.CheckoutAsync(UserId,input.PaymentMethod,reference);}
+        catch(SqlException)
+        {
+            ModelState.AddModelError("","No se pudo registrar el pago. Ejecuta nuevamente Database/BookMatch.Full.sql para actualizar el procedimiento de compra.");
+            return View("Cart",new CartViewModel{Items=items,Checkout=input});
+        }
         TempData["Success"]=$"Compra simulada completada con {(input.PaymentMethod=="PayPal"?"PayPal":"tarjeta")}. Los libros ya están en tu biblioteca.";
         return RedirectToAction(nameof(Library));
     }

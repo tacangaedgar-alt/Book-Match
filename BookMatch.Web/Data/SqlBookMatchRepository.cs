@@ -79,10 +79,10 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Publicacion_Listar"); Add(cmd,"@UsuarioId",userId); return await ReadBooksAsync(cmd);
     }
 
-    public async Task<int> PublishBookAsync(int userId, PublishBookInput input, string? storedPdfPath)
+    public async Task<int> PublishBookAsync(int userId, PublishBookInput input, string storedPdfPath, string coverUrl)
     {
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Libro_Publicar");
-        Add(cmd,"@UsuarioId",userId); Add(cmd,"@Titulo",input.Title); Add(cmd,"@Genero",input.Genre); Add(cmd,"@Idioma",input.Language); Add(cmd,"@Precio",input.Price); Add(cmd,"@Descripcion",input.Description); Add(cmd,"@Contenido",input.Content); Add(cmd,"@RutaPdf",storedPdfPath);
+        Add(cmd,"@UsuarioId",userId); Add(cmd,"@Titulo",input.Title); Add(cmd,"@Genero",input.Genre); Add(cmd,"@Idioma",input.Language); Add(cmd,"@Precio",input.Price); Add(cmd,"@Descripcion",input.Description); Add(cmd,"@Contenido",input.Content); Add(cmd,"@RutaPdf",storedPdfPath); Add(cmd,"@PortadaUrl",coverUrl);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 

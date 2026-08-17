@@ -13,7 +13,7 @@ public interface IBookMatchRepository
     Task<List<BookItem>> GetLibraryAsync(int userId, string filter);
     Task<LibraryBookAccess?> GetLibraryBookAccessAsync(int userId, int bookId, bool markAsRead);
     Task<List<BookItem>> GetPublicationsAsync(int userId);
-    Task<int> PublishBookAsync(int userId, PublishBookInput input, string? storedPdfPath);
+    Task<int> PublishBookAsync(int userId, PublishBookInput input, string storedPdfPath, string coverUrl);
     Task<string> AddToCartAsync(int userId, int bookId);
     Task<int> GetCartCountAsync(int userId);
     Task<List<CartItem>> GetCartAsync(int userId);

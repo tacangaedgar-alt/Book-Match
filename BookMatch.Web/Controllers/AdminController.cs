@@ -13,7 +13,15 @@ public sealed class AdminController(IBookMatchRepository repository) : Controlle
     public async Task<IActionResult> Dashboard()=>View(await repository.GetDashboardAsync(true,UserId));
     public async Task<IActionResult> Catalog(string? q,string? genre,string? language,string priceType="all",decimal? rating=null)=>View(new CatalogViewModel{Books=await repository.GetCatalogAsync(q,genre,language,priceType,rating),Query=q,Genre=genre,Language=language,PriceType=priceType,MinimumRating=rating});
     public async Task<IActionResult> Users(string? q,string tab="users")=>View(new UsersViewModel{Tab=tab,Query=q,Users=await repository.GetUsersAsync(q),Sessions=tab=="sessions"?await repository.GetActiveSessionsAsync():[]});
-    [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> SetUserStatus(int id,bool active){await repository.SetUserStatusAsync(id,active);TempData["Success"]=active?"Usuario activado correctamente.":"Usuario desactivado y sus sesiones fueron cerradas.";return RedirectToAction(nameof(Users));}
+    [HttpPost,ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetUserStatus(int id,string operation)
+    {
+        if(operation is not ("activate" or "deactivate")){TempData["Error"]="La operación solicitada no es válida.";return RedirectToAction(nameof(Users));}
+        var active=operation=="activate";
+        await repository.SetUserStatusAsync(id,active);
+        TempData["Success"]=active?"Usuario activado correctamente.":"Usuario desactivado y sus sesiones fueron cerradas.";
+        return RedirectToAction(nameof(Users));
+    }
     [HttpPost,ValidateAntiForgeryToken]
     public async Task<IActionResult> EditUser(EditUserInput input)
     {

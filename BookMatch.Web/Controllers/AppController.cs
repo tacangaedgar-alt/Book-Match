@@ -12,7 +12,17 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
     private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     public async Task<IActionResult> Dashboard() => View(await repository.GetDashboardAsync(false, UserId));
-    public IActionResult Recommendations() => View();
+    public IActionResult Recommendations() => View(new RecommendationViewModel());
+
+    [HttpPost,ValidateAntiForgeryToken]
+    public async Task<IActionResult> Recommendations(RecommendationInput input)
+    {
+        if(!ModelState.IsValid){TempData["Error"]="Responde las siete preguntas para generar recomendaciones.";return View(new RecommendationViewModel{Preferences=input});}
+        await repository.SavePreferencesAsync(UserId,input);
+        var books=await repository.GetRecommendationsAsync(UserId);
+        TempData["Success"]="Guardamos tus preferencias y encontramos lecturas para ti.";
+        return View(new RecommendationViewModel{HasResults=true,Preferences=input,Books=books});
+    }
 
     public async Task<IActionResult> Catalog(string? q, string? genre, string? language, string priceType="all", decimal? rating=null)
         => View(new CatalogViewModel { Books=await repository.GetCatalogAsync(q,genre,language,priceType,rating), Query=q,Genre=genre,Language=language,PriceType=priceType,MinimumRating=rating });

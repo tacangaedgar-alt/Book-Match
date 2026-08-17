@@ -43,6 +43,17 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         return await ReadBooksAsync(cmd);
     }
 
+    public async Task SavePreferencesAsync(int userId, RecommendationInput input)
+    {
+        await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Preferencia_Guardar");
+        Add(cmd,"@UsuarioId",userId); Add(cmd,"@Genero",input.Genre); Add(cmd,"@Paginas",input.PagePreference); Add(cmd,"@Idioma",input.Language); Add(cmd,"@Formato",input.Format); Add(cmd,"@Ritmo",input.Pace); Add(cmd,"@Ambiente",input.Mood); Add(cmd,"@Descubrimiento",input.Discovery); await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task<List<BookItem>> GetRecommendationsAsync(int userId)
+    {
+        await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Recomendacion_Obtener"); Add(cmd,"@UsuarioId",userId); return await ReadBooksAsync(cmd);
+    }
+
     public async Task<List<BookItem>> GetLibraryAsync(int userId, string filter)
     {
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Biblioteca_Listar"); Add(cmd,"@UsuarioId",userId); Add(cmd,"@Filtro",filter); return await ReadBooksAsync(cmd);
@@ -93,6 +104,8 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         while(await rd.ReadAsync()) rows.Add(new(){
             Id=rd.GetInt32("LibroId"), Code=rd.GetString("Codigo"), Title=rd.GetString("Titulo"), Author=rd.GetString("Autor"), Genre=rd.GetString("Genero"), Language=rd.GetString("Idioma"),
             Description=rd.GetString("Descripcion"), Price=rd.GetDecimal("Precio"), Rating=rd.GetDecimal("Valoracion"), CoverUrl=rd.GetString("PortadaUrl"), Status=rd.GetString("Estado"),
-            Sales=rd.GetInt32("Ventas"), Downloads=rd.GetInt32("Descargas"), IsRead=rd.GetBoolean("Leido"), Date=rd.IsDBNull("Fecha")?null:rd.GetDateTime("Fecha")}); return rows;
+            Sales=rd.GetInt32("Ventas"), Downloads=rd.GetInt32("Descargas"), IsRead=rd.GetBoolean("Leido"), Date=rd.IsDBNull("Fecha")?null:rd.GetDateTime("Fecha"), Affinity=HasColumn(rd,"Afinidad")?rd.GetInt32("Afinidad"):0}); return rows;
     }
+
+    private static bool HasColumn(SqlDataReader reader,string name){for(var i=0;i<reader.FieldCount;i++)if(string.Equals(reader.GetName(i),name,StringComparison.OrdinalIgnoreCase))return true;return false;}
 }

@@ -44,6 +44,25 @@ public sealed class BookItem
     public int Downloads { get; init; }
     public bool IsRead { get; init; }
     public DateTime? Date { get; init; }
+    public int Affinity { get; init; }
+}
+
+public sealed class RecommendationInput
+{
+    [Required] public string Genre { get; set; } = "";
+    [Required] public string PagePreference { get; set; } = "";
+    [Required] public string Language { get; set; } = "";
+    [Required] public string Format { get; set; } = "";
+    [Required] public string Pace { get; set; } = "";
+    [Required] public string Mood { get; set; } = "";
+    [Required] public string Discovery { get; set; } = "";
+}
+
+public sealed class RecommendationViewModel
+{
+    public bool HasResults { get; init; }
+    public RecommendationInput Preferences { get; init; } = new();
+    public List<BookItem> Books { get; init; } = [];
 }
 
 public sealed class CatalogViewModel

@@ -94,6 +94,23 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
     }
     public async Task<IActionResult> Publications(bool stats=false) => View(new PublicationViewModel { Books=await repository.GetPublicationsAsync(UserId),Statistics=stats });
 
+    public async Task<IActionResult> PreviewPublication(int id)
+    {
+        var book=await repository.GetPublicationBookAccessAsync(UserId,id);
+        if(book is null){TempData["Error"]="La publicación no existe o no te pertenece.";return RedirectToAction(nameof(Publications));}
+        if(!TryResolvePdf(book.PdfPath,out _)){TempData["Error"]="Esta publicación no tiene un PDF disponible.";return RedirectToAction(nameof(Publications));}
+        return View("ReadBook",new ReaderViewModel{BookId=book.Id,Title=book.Title,Author=book.Author,IsAuthorPreview=true});
+    }
+
+    public async Task<IActionResult> PublicationPdf(int id,bool download=false)
+    {
+        var book=await repository.GetPublicationBookAccessAsync(UserId,id);
+        if(book is null)return NotFound();
+        if(!TryResolvePdf(book.PdfPath,out var physicalPath))return NotFound();
+        if(download)return PhysicalFile(physicalPath,"application/pdf",$"{SafeDownloadName(book.Title)}.pdf",enableRangeProcessing:true);
+        return PhysicalFile(physicalPath,"application/pdf",enableRangeProcessing:true);
+    }
+
     [HttpPost,ValidateAntiForgeryToken,RequestSizeLimit(60_000_000)]
     public async Task<IActionResult> Publish(PublishBookInput input)
     {

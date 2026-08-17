@@ -60,6 +60,7 @@ public sealed class ReaderViewModel
     public int BookId { get; init; }
     public string Title { get; init; } = "";
     public string Author { get; init; } = "";
+    public bool IsAuthorPreview { get; init; }
 }
 
 public sealed class RecommendationInput

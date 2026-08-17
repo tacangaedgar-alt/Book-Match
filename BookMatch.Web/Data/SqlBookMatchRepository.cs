@@ -82,6 +82,13 @@ public sealed class SqlBookMatchRepository(IConfiguration configuration) : IBook
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Publicacion_Listar"); Add(cmd,"@UsuarioId",userId); return await ReadBooksAsync(cmd);
     }
 
+    public async Task<LibraryBookAccess?> GetPublicationBookAccessAsync(int userId, int bookId)
+    {
+        await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Publicacion_Acceso");
+        Add(cmd,"@UsuarioId",userId); Add(cmd,"@LibroId",bookId); await using var rd=await cmd.ExecuteReaderAsync();
+        return await rd.ReadAsync()?new(rd.GetInt32("LibroId"),rd.GetString("Titulo"),rd.GetString("Autor"),rd.IsDBNull("RutaPdf")?null:rd.GetString("RutaPdf")):null;
+    }
+
     public async Task<int> PublishBookAsync(int userId, PublishBookInput input, string storedPdfPath, string coverUrl)
     {
         await using var cn=Connection(); await cn.OpenAsync(); await using var cmd=Procedure(cn,"dbo.usp_Libro_Publicar");

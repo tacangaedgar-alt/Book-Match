@@ -8,7 +8,7 @@
 }
 else
 {
- <div class="table-wrap"><table><thead><tr><th>Código</th><th>Portada</th><th>Título</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Ventas</th></tr></thead><tbody>@foreach(var b in Model.Books){<tr><td>@b.Code</td><td><img class="mini-cover" src="@b.CoverUrl" alt="Portada de @b.Title"></td><td><strong>@b.Title</strong></td><td><span class="tag">@b.Genre</span></td><td>@(b.Price==0?"Gratis":b.Price.ToString("C"))</td><td><span class="status success">@b.Status</span></td><td>@b.Sales</td></tr>}</tbody></table></div>
+ <div class="table-wrap"><table><thead><tr><th>Código</th><th>Portada</th><th>Título</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Ventas</th><th>Archivo</th></tr></thead><tbody>@foreach(var b in Model.Books){<tr><td>@b.Code</td><td><img class="mini-cover" src="@b.CoverUrl" alt="Portada de @b.Title"></td><td><strong>@b.Title</strong></td><td><span class="tag">@b.Genre</span></td><td>@(b.Price==0?"Gratis":b.Price.ToString("C"))</td><td><span class="status success">@b.Status</span></td><td>@b.Sales</td><td><div class="publication-file-actions">@if(b.HasPdf){<a class="btn-primary small" asp-action="PreviewPublication" asp-route-id="@b.Id">Vista previa</a><a class="btn-outline small" asp-action="PublicationPdf" asp-route-id="@b.Id" asp-route-download="true">Descargar PDF</a>}else{<span class="status muted">PDF no disponible</span>}</div></td></tr>}</tbody></table></div>
 }
 <div class="modal-shell publication-modal" id="publish-modal" hidden>
  <div class="modal-card publication-card" role="dialog" aria-modal="true" aria-labelledby="publish-title">

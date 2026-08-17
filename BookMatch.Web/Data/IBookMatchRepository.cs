@@ -14,6 +14,7 @@ public interface IBookMatchRepository
     Task RateBookAsync(int userId, int bookId, int score);
     Task<LibraryBookAccess?> GetLibraryBookAccessAsync(int userId, int bookId, bool markAsRead);
     Task<List<BookItem>> GetPublicationsAsync(int userId);
+    Task<LibraryBookAccess?> GetPublicationBookAccessAsync(int userId, int bookId);
     Task<int> PublishBookAsync(int userId, PublishBookInput input, string storedPdfPath, string coverUrl);
     Task<string> AddToCartAsync(int userId, int bookId);
     Task<int> GetCartCountAsync(int userId);

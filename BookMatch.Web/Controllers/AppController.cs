@@ -31,6 +31,41 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
     public async Task<IActionResult> AddToCart(int id) { await repository.AddToCartAsync(UserId,id); TempData["Success"]="Libro añadido al carrito."; return RedirectToAction(nameof(Catalog)); }
 
     public async Task<IActionResult> Library(string filter="all") => View(new LibraryViewModel { Books=await repository.GetLibraryAsync(UserId,filter),Filter=filter });
+
+    public async Task<IActionResult> ReadBook(int id)
+    {
+        var book=await repository.GetLibraryBookAccessAsync(UserId,id,false);
+        if(book is null){TempData["Error"]="El libro no pertenece a tu biblioteca.";return RedirectToAction(nameof(Library));}
+        if(!TryResolvePdf(book.PdfPath,out _)){TempData["Error"]="Este libro todavía no tiene un PDF disponible.";return RedirectToAction(nameof(Library));}
+        await repository.GetLibraryBookAccessAsync(UserId,id,true);
+        return View(new ReaderViewModel{BookId=book.Id,Title=book.Title,Author=book.Author});
+    }
+
+    public async Task<IActionResult> BookPdf(int id, bool download=false)
+    {
+        var book=await repository.GetLibraryBookAccessAsync(UserId,id,false);
+        if(book is null)return NotFound();
+        if(!TryResolvePdf(book.PdfPath,out var physicalPath))return NotFound();
+        if(download)return PhysicalFile(physicalPath,"application/pdf",$"{SafeDownloadName(book.Title)}.pdf",enableRangeProcessing:true);
+        return PhysicalFile(physicalPath,"application/pdf",enableRangeProcessing:true);
+    }
+
+    private bool TryResolvePdf(string? storedPath, out string physicalPath)
+    {
+        physicalPath="";
+        if(string.IsNullOrWhiteSpace(storedPath))return false;
+        var fileName=Path.GetFileName(storedPath);
+        if(!string.Equals(Path.GetExtension(fileName),".pdf",StringComparison.OrdinalIgnoreCase))return false;
+        physicalPath=Path.Combine(environment.WebRootPath,"uploads","books",fileName);
+        return System.IO.File.Exists(physicalPath);
+    }
+
+    private static string SafeDownloadName(string title)
+    {
+        var invalid=Path.GetInvalidFileNameChars();
+        var safe=new string(title.Select(c=>invalid.Contains(c)?'_':c).ToArray()).Trim();
+        return string.IsNullOrWhiteSpace(safe)?"libro":safe;
+    }
     public async Task<IActionResult> Publications(bool stats=false) => View(new PublicationViewModel { Books=await repository.GetPublicationsAsync(UserId),Statistics=stats });
 
     [HttpPost,ValidateAntiForgeryToken,RequestSizeLimit(55_000_000)]

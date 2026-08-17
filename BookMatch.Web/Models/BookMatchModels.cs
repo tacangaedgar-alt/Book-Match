@@ -43,8 +43,18 @@ public sealed class BookItem
     public int Sales { get; init; }
     public int Downloads { get; init; }
     public bool IsRead { get; init; }
+    public bool HasPdf { get; init; }
     public DateTime? Date { get; init; }
     public int Affinity { get; init; }
+}
+
+public sealed record LibraryBookAccess(int Id, string Title, string Author, string? PdfPath);
+
+public sealed class ReaderViewModel
+{
+    public int BookId { get; init; }
+    public string Title { get; init; } = "";
+    public string Author { get; init; } = "";
 }
 
 public sealed class RecommendationInput

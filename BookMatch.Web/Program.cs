@@ -31,6 +31,16 @@ if (!app.Environment.IsDevelopment())
 }
 
 if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
+app.Use(async (context, next) =>
+{
+    // Los libros solo se entregan mediante App/BookPdf, que valida la biblioteca del usuario.
+    if (context.Request.Path.StartsWithSegments("/uploads/books"))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    await next();
+});
 app.UseStaticFiles();
 
 app.UseRouting();

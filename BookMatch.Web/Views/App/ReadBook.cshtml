@@ -1,0 +1,14 @@
+@model ReaderViewModel
+@{ViewData["Title"]=$"Leer {Model.Title}";}
+<div class="reader-heading">
+    <div>
+        <a class="reader-back" asp-action="Library">← Volver a Mi Biblioteca</a>
+        <h1>@Model.Title</h1>
+        <p>de @Model.Author · El libro se marcó como leído</p>
+    </div>
+    <a class="btn-outline" asp-action="BookPdf" asp-route-id="@Model.BookId" asp-route-download="true">Descargar PDF</a>
+</div>
+<section class="reader-shell" aria-label="Lector de @Model.Title">
+    <iframe src="@Url.Action("BookPdf",new{id=Model.BookId})" title="Contenido PDF de @Model.Title"></iframe>
+    <noscript><p>Activa JavaScript o <a asp-action="BookPdf" asp-route-id="@Model.BookId">abre el PDF directamente</a>.</p></noscript>
+</section>

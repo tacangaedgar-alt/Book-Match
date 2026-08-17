@@ -150,6 +150,7 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
         if(items.Count==0)ModelState.AddModelError("","Tu carrito está vacío.");
         if(input.PaymentMethod=="Card")
         {
+            ModelState.Remove("Checkout.PayPalEmail");
             var digits=new string((input.CardNumber??"").Where(char.IsDigit).ToArray());
             if(string.IsNullOrWhiteSpace(input.Cardholder))ModelState.AddModelError("Checkout.Cardholder","Ingresa el nombre del titular.");
             if(!IsValidCardNumber(digits))ModelState.AddModelError("Checkout.CardNumber","Ingresa un número de tarjeta válido de 16 dígitos.");
@@ -158,7 +159,7 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
         }
         else if(input.PaymentMethod=="PayPal")
         {
-            ModelState.Remove("Checkout.PayPalEmail");input.PayPalEmail=userEmail;
+            ModelState.Remove("Checkout.Cardholder");ModelState.Remove("Checkout.CardNumber");ModelState.Remove("Checkout.Expiry");ModelState.Remove("Checkout.Cvv");ModelState.Remove("Checkout.PayPalEmail");input.PayPalEmail=userEmail;
             if(string.IsNullOrWhiteSpace(userEmail))ModelState.AddModelError("Checkout.PayPalEmail","Tu cuenta no tiene un correo válido para PayPal.");
         }
         else ModelState.AddModelError("Checkout.PaymentMethod","Selecciona un método de pago válido.");

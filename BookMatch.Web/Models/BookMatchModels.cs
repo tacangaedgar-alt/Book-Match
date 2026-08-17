@@ -138,11 +138,11 @@ public sealed class CartViewModel
 public sealed class CheckoutInput
 {
     [Required] public string PaymentMethod { get; set; } = "Card";
-    public string Cardholder { get; set; } = "";
-    public string CardNumber { get; set; } = "";
-    public string Expiry { get; set; } = "";
-    public string Cvv { get; set; } = "";
-    public string PayPalEmail { get; set; } = "";
+    public string? Cardholder { get; set; }
+    public string? CardNumber { get; set; }
+    public string? Expiry { get; set; }
+    public string? Cvv { get; set; }
+    public string? PayPalEmail { get; set; }
 }
 
 public sealed class QueryViewModel

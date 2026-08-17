@@ -9,17 +9,16 @@ using Microsoft.Data.SqlClient;
 
 namespace BookMatch.Web.Controllers;
 
-[AllowAnonymous]
 public sealed class AccountController(IBookMatchRepository repository) : Controller
 {
-    [HttpGet]
+    [AllowAnonymous, HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true) return RedirectToAction("Dashboard", User.IsInRole("Administrador") ? "Admin" : "App");
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
 
-    [HttpPost, ValidateAntiForgeryToken]
+    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         if (!ModelState.IsValid) return View(model);
@@ -38,7 +37,7 @@ public sealed class AccountController(IBookMatchRepository repository) : Control
         }
     }
 
-    [HttpPost, ValidateAntiForgeryToken]
+    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Demo(string role)
     {
         var email = role == "admin" ? "admin@bookmatch.com" : "elena@example.com";
@@ -50,6 +49,7 @@ public sealed class AccountController(IBookMatchRepository repository) : Control
 
     [Authorize, HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout() { await HttpContext.SignOutAsync(); return RedirectToAction(nameof(Login)); }
+    [AllowAnonymous]
     public IActionResult AccessDenied() => View();
 
     private async Task SignInAsync(AuthenticatedUser user)

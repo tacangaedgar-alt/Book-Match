@@ -98,6 +98,7 @@ public sealed class LibraryViewModel
 public sealed class PublicationViewModel
 {
     public List<BookItem> Books { get; init; } = [];
+    public List<PurchaseRow> Purchases { get; init; } = [];
     public bool Statistics { get; init; }
     public decimal Revenue => Books.Sum(x => x.Price * x.Sales);
     public int Downloads => Books.Sum(x => x.Downloads);

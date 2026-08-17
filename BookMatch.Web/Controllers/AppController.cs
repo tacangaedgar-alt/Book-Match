@@ -107,5 +107,5 @@ public sealed class AppController(IBookMatchRepository repository, IWebHostEnvir
     [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> RemoveFromCart(int id){await repository.RemoveFromCartAsync(UserId,id);return RedirectToAction(nameof(Cart));}
     [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Checkout(){await repository.CheckoutAsync(UserId);TempData["Success"]="Compra completada. Los libros ya están en tu biblioteca.";return RedirectToAction(nameof(Library));}
     public async Task<IActionResult> Queries(string tab="author") => View(new QueryViewModel{Tab=tab,Books=await repository.GetCatalogAsync(null,null,null,"all",null),Purchases=await repository.GetPurchasesAsync()});
-    public async Task<IActionResult> Reports() => View(new PublicationViewModel { Books=await repository.GetCatalogAsync(null,null,null,"all",null) });
+    public async Task<IActionResult> Reports() => View(new PublicationViewModel { Books=await repository.GetCatalogAsync(null,null,null,"all",null),Purchases=await repository.GetPurchasesAsync() });
 }

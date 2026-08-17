@@ -15,6 +15,6 @@ public sealed class AdminController(IBookMatchRepository repository) : Controlle
     public async Task<IActionResult> Users(string? q,string tab="users")=>View(new UsersViewModel{Tab=tab,Users=await repository.GetUsersAsync(q)});
     [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> SetUserStatus(int id,bool active){await repository.SetUserStatusAsync(id,active);TempData["Success"]="Estado actualizado.";return RedirectToAction(nameof(Users));}
     public async Task<IActionResult> Queries(string tab="purchases")=>View(new QueryViewModel{Tab=tab,Books=await repository.GetCatalogAsync(null,null,null,"all",null),Purchases=await repository.GetPurchasesAsync()});
-    public async Task<IActionResult> Reports()=>View(new PublicationViewModel{Books=await repository.GetCatalogAsync(null,null,null,"all",null)});
+    public async Task<IActionResult> Reports()=>View(new PublicationViewModel{Books=await repository.GetCatalogAsync(null,null,null,"all",null),Purchases=await repository.GetPurchasesAsync()});
     public async Task<IActionResult> Security(string tab="roles")=>View("Users",new UsersViewModel{Tab=tab,Users=await repository.GetUsersAsync(null)});
 }

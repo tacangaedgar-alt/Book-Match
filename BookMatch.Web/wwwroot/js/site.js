@@ -26,7 +26,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   quiz.querySelector('[data-recommendation-form]').addEventListener('submit',event=>{if(Object.keys(answers).length!==questions.length){event.preventDefault();return}setSubmitting(event.currentTarget,'Calculando…')});
  }
 
- document.querySelector('[data-export-table]')?.addEventListener('click',()=>{const table=document.querySelector('#report-table');if(!table)return;const csv=[...table.rows].map(r=>[...r.cells].map(c=>'"'+c.innerText.replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='BookMatch-reporte.csv';a.click();URL.revokeObjectURL(a.href)});
+ const reports=document.querySelector('[data-reports]');
+ if(reports){
+  const tabs=[...reports.querySelectorAll('[data-report-tab]')],panels=[...reports.querySelectorAll('[data-report-panel]')];
+  const activate=tab=>{tabs.forEach(x=>{const active=x===tab;x.classList.toggle('active',active);x.setAttribute('aria-selected',String(active));x.tabIndex=active?0:-1});panels.forEach(x=>x.hidden=x.id!==tab.dataset.reportTab);tab.focus()};
+  tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>activate(tab));tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();let next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;activate(tabs[next])})});
+  const activePanel=()=>panels.find(x=>!x.hidden);
+  reports.querySelector('[data-export-excel]')?.addEventListener('click',()=>{const panel=activePanel(),table=panel?.querySelector('table');if(!table)return;const csv='\uFEFF'+[...table.rows].map(row=>[...row.cells].map(cell=>'"'+cell.innerText.replaceAll('"','""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download=`BookMatch-${panel.dataset.reportName}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+  reports.querySelector('[data-export-pdf]')?.addEventListener('click',()=>{const panel=activePanel();if(!panel)return;const oldTitle=document.title;document.title=`BookMatch-${panel.dataset.reportName}`;const restore=()=>{document.title=oldTitle;window.removeEventListener('afterprint',restore)};window.addEventListener('afterprint',restore);window.print();setTimeout(restore,2000)});
+ }
  setTimeout(()=>document.querySelectorAll('.toast-message').forEach(x=>x.remove()),4500);
 });
 function setSubmitting(form,label){const button=form.querySelector('[data-submit-button]');if(button){button.disabled=true;button.textContent=label;button.setAttribute('aria-busy','true')}}

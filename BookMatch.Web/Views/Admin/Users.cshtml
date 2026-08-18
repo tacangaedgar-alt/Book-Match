@@ -1,13 +1,13 @@
 @model UsersViewModel
-@{ ViewData["Title"]="Usuarios y seguridad"; var currentUserId=int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!); }
-<div class="page-heading"><div><h1>Usuarios y seguridad</h1><p>Administra perfiles, permisos, estados y sesiones reales de BookMatch.</p></div>@if(Model.Tab=="users"){<button class="btn-primary" type="button" data-modal-open="create-user"><span aria-hidden="true">＋</span> Nuevo usuario</button>}</div>
+@{ ViewData["Title"]="seguridad"; var currentUserId=int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!); }
+<div class="page-heading"><div><h1>seguridad</h1><p>Administra perfiles, permisos, estados y sesiones reales de BookMatch.</p></div>@if(Model.Tab=="users"){<button class="btn-primary" type="button" data-modal-open="create-user"><span aria-hidden="true">＋</span> Nuevo usuario</button>}</div>
 <div class="tab-row">
  <a class="@(Model.Tab=="users"?"active":"")" asp-action="Users" asp-route-tab="users">Gestión de usuarios</a>
  <a class="@(Model.Tab=="roles"?"active":"")" asp-action="Users" asp-route-tab="roles">Roles y permisos</a>
  <a class="@(Model.Tab=="sessions"?"active":"")" asp-action="Users" asp-route-tab="sessions">Sesiones activas (@Model.Sessions.Count)</a>
 </div>
 @if(Model.Tab=="roles"){
- <div class="role-grid"><article class="panel"><span class="role-icon">A</span><h2>Administrador</h2><p>Usuarios y seguridad<br>Catálogo global<br>Consultas y reportes<br>Cierre de sesiones</p></article><article class="panel"><span class="role-icon">LE</span><h2>Lector / Escritor</h2><p>Recomendaciones y catálogo<br>Compras, biblioteca y valoraciones<br>Publicación de libros<br>PDF originales y estadísticas propias</p></article></div>
+ <div class="role-grid"><article class="panel"><span class="role-icon">A</span><h2>Administrador</h2><p>seguridad<br>Catálogo global<br>Consultas y reportes<br>Cierre de sesiones</p></article><article class="panel"><span class="role-icon">LE</span><h2>Lector / Escritor</h2><p>Recomendaciones y catálogo<br>Compras, biblioteca y valoraciones<br>Publicación de libros<br>PDF originales y estadísticas propias</p></article></div>
 }else if(Model.Tab=="sessions"){
  <div class="panel session-heading"><div><h2>Sesiones conectadas</h2><p>Una sesión cerrada perderá acceso en su próxima petición.</p></div><span class="status success">@Model.Sessions.Count activas</span></div>
  <div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Inicio</th><th>Dirección IP</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
